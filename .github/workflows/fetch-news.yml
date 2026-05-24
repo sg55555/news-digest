@@ -25,13 +25,16 @@ jobs:
 
       - name: Generate news digest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY:  ${{ secrets.SUPABASE_ANON_KEY }}
+          VAPID_PRIVATE_KEY:  ${{ secrets.VAPID_PRIVATE_KEY }}
         run: python scripts/fetch_and_summarize.py
 
-      - name: Commit and push news.json
+      - name: Commit and push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/news.json
+          git add public/news.json public/news-*.json
           git diff --staged --quiet || git commit -m "chore: morning brief $(date +'%Y-%m-%d')"
           git push

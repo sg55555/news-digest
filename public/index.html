@@ -540,6 +540,19 @@
     }
     .modal-read-link:hover { background: rgba(99,102,241,.2); border-color: rgba(99,102,241,.55); color: #fff; gap: 10px; }
 
+    /* ── 通知ボタン ── */
+    .notif-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 10px;
+      color: var(--txt1); font-size: .72rem; font-family: inherit;
+      cursor: pointer; transition: all .2s;
+    }
+    .notif-btn:hover { border-color: rgba(99,102,241,.4); color: var(--txt0); }
+    .notif-btn.on { border-color: rgba(52,211,153,.4); color: #34d399; }
+    .notif-btn svg { transition: transform .2s; }
+    .notif-btn:hover svg { transform: rotate(-15deg); }
+
     /* ── Sync indicator ── */
     .sync-dot {
       width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
@@ -634,6 +647,33 @@
     }
     .foot a { color: var(--txt2); text-decoration: underline; text-underline-offset: 3px; }
 
+    /* ── 週次ビュー ── */
+    .week-view { padding: 0 20px; }
+    .week-day-group { margin-bottom: 36px; }
+    .week-day-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+      cursor: pointer; user-select: none;
+    }
+    .week-day-label {
+      font-size: .95rem; font-weight: 700; color: var(--txt0);
+    }
+    .week-day-tag {
+      font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(99,102,241,.15); color: var(--indigo);
+      border: 1px solid rgba(99,102,241,.25); border-radius: 20px;
+      padding: 2px 9px;
+    }
+    .week-day-chevron {
+      margin-left: auto; color: var(--txt2); transition: transform .25s;
+    }
+    .week-day-group.collapsed .week-day-chevron { transform: rotate(-90deg); }
+    .week-day-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .week-day-group.collapsed .week-day-cards { display: none; }
+    .week-empty { color: var(--txt2); font-size: .8rem; padding: 8px 0; }
+
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 3px; }
@@ -717,6 +757,13 @@
         <span class="sync-dot" id="sync-dot"></span>
         <span id="sync-label" title="同期設定を開く">—</span>
       </div>
+      <button class="notif-btn" id="notif-btn" onclick="toggleNotification()" title="毎朝の通知をオンにする" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+        <span id="notif-label">通知オフ</span>
+      </button>
     </div>
   </header>
 
@@ -731,9 +778,11 @@
     <button class="f-btn" data-f="社会">社会</button>
     <span class="filter-sep"></span>
     <button class="f-btn read-toggle" id="unread-toggle">未読のみ</button>
+    <button class="f-btn" id="weekly-btn" onclick="toggleWeeklyView()">週次まとめ</button>
   </div>
 
   <main id="grid" class="grid"></main>
+  <div id="week-view" class="week-view" style="display:none"></div>
 
   <footer class="foot">
     <p>Sources: NHK · 東洋経済 · ITmedia · BBC · Hacker News · Google News</p>
@@ -1168,8 +1217,181 @@ load();
 /* ── Service Worker 登録（PWA） ── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => initNotifBtn())
+      .catch(() => {});
   });
+}
+
+/* ── プッシュ通知 ── */
+const VAPID_PUBLIC = 'BGfWFa18BZwMoPXWZV0EPK3KZ-UbyvVcBxxjTTC3gkZnwAwmPIXKQCk-PE-YOC3M_UKK3OobPuhWxyCzN9DcvkU';
+
+function urlB64ToUint8(b64) {
+  const raw = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function saveSubToSupabase(sub) {
+  if (!sb) return;
+  const j = sub.toJSON();
+  try {
+    await sb.from('push_subscriptions').upsert(
+      { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth },
+      { onConflict: 'endpoint' }
+    );
+  } catch {}
+}
+
+async function deleteSubFromSupabase(sub) {
+  if (!sb || !sub) return;
+  try { await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); } catch {}
+}
+
+function setNotifBtn(active) {
+  const btn = $('notif-btn');
+  const lbl = $('notif-label');
+  if (!btn) return;
+  btn.classList.toggle('on', active);
+  lbl.textContent = active ? '通知オン' : '通知オフ';
+  btn.title = active ? '通知をオフにする' : '毎朝の通知をオンにする';
+}
+
+async function initNotifBtn() {
+  if (!('PushManager' in window)) return;
+  $('notif-btn').style.display = '';
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  setNotifBtn(!!sub && Notification.permission === 'granted');
+}
+
+async function toggleNotification() {
+  if (!('PushManager' in window)) { alert('このブラウザはプッシュ通知に対応していません'); return; }
+  const reg = await navigator.serviceWorker.ready;
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) {
+    await existing.unsubscribe();
+    await deleteSubFromSupabase(existing);
+    setNotifBtn(false);
+  } else {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { setNotifBtn(false); return; }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8(VAPID_PUBLIC),
+    });
+    await saveSubToSupabase(sub);
+    setNotifBtn(true);
+  }
+}
+
+/* ── 週次ビュー ── */
+let weeklyMode = false;
+
+function dayLabel(dateStr) {
+  const today     = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const d = new Date(dateStr + 'T00:00:00+09:00');
+  const jp = d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' });
+  if (dateStr === today)     return { label: jp, tag: '今日' };
+  if (dateStr === yesterday) return { label: jp, tag: '昨日' };
+  return { label: jp, tag: null };
+}
+
+async function loadWeeklyView() {
+  const wv = $('week-view');
+  wv.innerHTML = '<div class="empty"><p>読み込み中...</p></div>';
+
+  const today = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    return d.toISOString().slice(0, 10);
+  });
+
+  const results = await Promise.all(days.map(async d => {
+    try {
+      const r = await fetch(`news-${d}.json?t=${Date.now()}`);
+      if (!r.ok) return null;
+      const data = await r.json();
+      return { date: d, articles: data.articles || [] };
+    } catch { return null; }
+  }));
+
+  const valid = results.filter(Boolean);
+  if (!valid.length) {
+    wv.innerHTML = '<div class="empty"><h3>週次データがありません</h3><p>翌日以降に自動生成されます</p></div>';
+    return;
+  }
+
+  wv.innerHTML = '';
+  valid.forEach((day, idx) => {
+    const { label, tag } = dayLabel(day.date);
+    const group = document.createElement('div');
+    group.className = 'week-day-group' + (idx >= 2 ? ' collapsed' : '');
+    group.innerHTML = `
+      <div class="week-day-header">
+        <span class="week-day-label">${label}</span>
+        ${tag ? `<span class="week-day-tag">${tag}</span>` : ''}
+        <svg class="week-day-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="week-day-cards"></div>`;
+    group.querySelector('.week-day-header').addEventListener('click', () => {
+      group.classList.toggle('collapsed');
+    });
+    const cardsEl = group.querySelector('.week-day-cards');
+    if (day.articles.length) {
+      day.articles.forEach(a => cardsEl.appendChild(makeCard(a)));
+    } else {
+      cardsEl.innerHTML = '<p class="week-empty">この日の記事はありません</p>';
+    }
+    wv.appendChild(group);
+
+    // カードアニメーション（展開中のグループのみ）
+    if (idx < 2) {
+      group.querySelectorAll('.card').forEach((card, i) => {
+        setTimeout(() => {
+          card.classList.add('show');
+          const fill = card.querySelector('.imp-fill');
+          if (fill) setTimeout(() => { fill.style.width = fill.dataset.w; }, 300);
+        }, i * 60);
+      });
+    }
+  });
+
+  // 週次ビュー内のカードクリックも委譲
+  wv.addEventListener('click', e => {
+    const deepBtn = e.target.closest('.deep-btn');
+    if (deepBtn) {
+      const id = parseInt(deepBtn.dataset.id);
+      const article = valid.flatMap(d => d.articles).find(a => a.id === id);
+      if (article) { markRead(id); openModal(article); }
+      return;
+    }
+    const link = e.target.closest('.card-link');
+    if (link) {
+      const card = link.closest('[data-aid]');
+      if (card) markRead(parseInt(card.dataset.aid));
+    }
+  });
+}
+
+function toggleWeeklyView() {
+  weeklyMode = !weeklyMode;
+  $('weekly-btn').classList.toggle('on', weeklyMode);
+  $('grid').style.display     = weeklyMode ? 'none' : '';
+  $('week-view').style.display = weeklyMode ? '' : 'none';
+
+  // 通常フィルターボタンを無効化
+  document.querySelectorAll('.f-btn[data-f]').forEach(b => {
+    b.style.opacity = weeklyMode ? '.4' : '';
+    b.style.pointerEvents = weeklyMode ? 'none' : '';
+  });
+  $('unread-toggle').style.opacity = weeklyMode ? '.4' : '';
+  $('unread-toggle').style.pointerEvents = weeklyMode ? 'none' : '';
+
+  if (weeklyMode) loadWeeklyView();
 }
 </script>
 </body>

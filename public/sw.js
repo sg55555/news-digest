@@ -1,4 +1,4 @@
-const CACHE = 'morning-brief-v1';
+const CACHE = 'morning-brief-v2';
 const PRE_CACHE = ['/index.html', '/favicon.svg', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -22,8 +22,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
 
-  // news.json: ネットワーク優先（常に最新を取得）、オフライン時はキャッシュ
-  if (url.pathname.includes('news.json')) {
+  // news*.json: ネットワーク優先（常に最新を取得）、オフライン時はキャッシュ
+  if (url.pathname.match(/news.*\.json$/)) {
     e.respondWith(
       fetch(e.request)
         .then(r => {
@@ -45,4 +45,22 @@ self.addEventListener('fetch', e => {
       });
     })
   );
+});
+
+/* ── プッシュ通知 ── */
+self.addEventListener('push', e => {
+  const d = e.data ? e.data.json() : {};
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'Morning Brief', {
+      body:  d.body  || '今日のニュースが届きました',
+      icon:  '/icon-192.png',
+      badge: '/icon-192.png',
+      data:  { url: d.url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.openWindow(e.notification.data?.url || '/'));
 });

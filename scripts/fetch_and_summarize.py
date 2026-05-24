@@ -291,12 +291,81 @@ def main():
         "articles":     output_articles,
     }
 
-    out_path = os.path.join(os.path.dirname(__file__), "../public/news.json")
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    pub_dir = os.path.join(os.path.dirname(__file__), "../public")
+    os.makedirs(pub_dir, exist_ok=True)
 
-    print(f"\n✅ news.json 更新完了 — {len(output_articles)} 記事")
+    # news.json (最新版) と日付付き JSON の両方を書き出す
+    for fname in ("news.json", f"news-{now.strftime('%Y-%m-%d')}.json"):
+        with open(os.path.join(pub_dir, fname), "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print(f"\n✅ news.json / news-{now.strftime('%Y-%m-%d')}.json 更新完了 — {len(output_articles)} 記事")
+
+    print("\n[5/5] プッシュ通知送信中...")
+    send_push_notifications(len(output_articles), output["date_label"])
+
+
+def send_push_notifications(count: int, date_label: str) -> None:
+    sb_url  = os.environ.get("SUPABASE_URL", "")
+    sb_key  = os.environ.get("SUPABASE_ANON_KEY", "")
+    v_priv  = os.environ.get("VAPID_PRIVATE_KEY", "")
+
+    if not (sb_url and sb_key and v_priv):
+        print("  SUPABASE / VAPID 未設定 → スキップ")
+        return
+
+    import urllib.request, urllib.parse
+    req = urllib.request.Request(
+        f"{sb_url}/rest/v1/push_subscriptions?select=endpoint,p256dh,auth",
+        headers={"apikey": sb_key, "Authorization": f"Bearer {sb_key}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            subs = json.loads(resp.read())
+    except Exception as err:
+        print(f"  サブスクリプション取得失敗: {err}")
+        return
+
+    if not subs:
+        print("  登録済みデバイス 0 件 → スキップ")
+        return
+
+    from pywebpush import webpush, WebPushException
+    ok = fail = 0
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": sub["endpoint"],
+                    "keys": {"p256dh": sub["p256dh"], "auth": sub["auth"]},
+                },
+                data=json.dumps({
+                    "title": f"Morning Brief — {date_label}",
+                    "body":  f"今日の重要ニュース {count} 件が届きました",
+                    "url":   "https://news-digest-tan.vercel.app",
+                }),
+                vapid_private_key=v_priv,
+                vapid_claims={"sub": "mailto:sgograb1411@gmail.com"},
+                content_encoding="aes128gcm",
+            )
+            ok += 1
+        except WebPushException as ex:
+            fail += 1
+            # 410 Gone = 有効期限切れ → Supabase から削除
+            if ex.response and ex.response.status_code == 410:
+                try:
+                    ep = urllib.parse.quote(sub["endpoint"], safe="")
+                    del_req = urllib.request.Request(
+                        f"{sb_url}/rest/v1/push_subscriptions?endpoint=eq.{ep}",
+                        method="DELETE",
+                        headers={"apikey": sb_key, "Authorization": f"Bearer {sb_key}"},
+                    )
+                    urllib.request.urlopen(del_req, timeout=5)
+                except Exception:
+                    pass
+        except Exception:
+            fail += 1
+    print(f"  プッシュ通知: 成功 {ok} / 失敗 {fail}")
 
 
 if __name__ == "__main__":
