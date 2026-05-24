@@ -175,7 +175,7 @@ JSONのみを返してください。"""
     )
     resp = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=8192,
+        max_tokens=16000,
         messages=[{"role": "user", "content": prompt}],
     )
     text = resp.content[0].text.strip()
@@ -185,7 +185,13 @@ JSONのみを返してください。"""
         return json.loads(text)["articles"]
     except Exception as ex:
         print(f"  深掘り分析パースエラー: {ex}")
-        return []
+        # 出力の末尾が切れている場合の応急処置
+        try:
+            trimmed = text[:text.rfind('}', 0, text.rfind('}'))+1]
+            trimmed = trimmed[:trimmed.rfind(']')+1] + '\n}'
+            return json.loads('{"articles":' + trimmed.split('"articles":',1)[-1].rsplit(']',1)[0] + ']}')["articles"]
+        except Exception:
+            return []
 
 
 def parse_date(s):
