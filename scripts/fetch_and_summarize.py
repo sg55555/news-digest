@@ -8,6 +8,7 @@ import feedparser
 import anthropic
 import json
 import os
+import re
 import sys
 from datetime import datetime
 import email.utils
@@ -72,10 +73,17 @@ def fetch_rss(feed):
         return []
 
 
+def _title_key(title):
+    """末尾の「- ソース名」や「(ソース名)」を除去して正規化キーを生成"""
+    t = re.sub(r'\s[-–—]\s\S.*$', '', title).strip()   # " - ソース名" を除去
+    t = re.sub(r'[（(][^）)]{2,20}[）)]$', '', t).strip()  # "(ソース名)" を除去
+    return t[:40]
+
+
 def deduplicate(articles):
     seen, out = set(), []
     for a in articles:
-        key = a["title"][:40]
+        key = _title_key(a["title"])
         if key and key not in seen:
             seen.add(key)
             out.append(a)
