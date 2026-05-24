@@ -102,7 +102,6 @@
       position: relative;
       overflow: hidden;
     }
-    /* Aurora blobs */
     .hdr::before, .hdr::after {
       content: "";
       position: absolute;
@@ -173,11 +172,7 @@
       opacity: 0;
       animation: fadeUp .6s ease .9s forwards;
     }
-    .hdr-meta-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .hdr-meta-item { display: flex; align-items: center; gap: 6px; }
     .hdr-meta-item svg { opacity: .5; flex-shrink: 0; }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
@@ -238,29 +233,19 @@
       backdrop-filter: blur(24px);
       display: flex;
       flex-direction: column;
-      gap: 0;
       cursor: default;
       opacity: 0;
       transform: translateY(28px);
-      transition:
-        transform .35s cubic-bezier(.34,1.56,.64,1),
-        border-color .3s,
-        box-shadow .3s;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), border-color .3s, box-shadow .3s;
       will-change: transform;
       position: relative;
       overflow: hidden;
     }
-    /* shimmer shine on hover */
     .card::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        105deg,
-        transparent 40%,
-        rgba(255,255,255,.04) 50%,
-        transparent 60%
-      );
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.04) 50%, transparent 60%);
       transform: translateX(-100%);
       transition: transform .5s ease;
       pointer-events: none;
@@ -272,9 +257,7 @@
       border-color: rgba(99,102,241,.38);
       box-shadow: 0 28px 64px rgba(0,0,0,.55), 0 0 44px rgba(99,102,241,.12);
     }
-    .card.show {
-      animation: cardIn .55s cubic-bezier(.22,1,.36,1) forwards;
-    }
+    .card.show { animation: cardIn .55s cubic-bezier(.22,1,.36,1) forwards; }
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -298,31 +281,19 @@
       letter-spacing: .06em;
       text-transform: uppercase;
     }
-    /* source */
     .src-NHK     { background: rgba(229,62,62,.18);  color: #fc8181; border: 1px solid rgba(229,62,62,.3); }
     .src-Reuters { background: rgba(237,137,54,.18); color: #f6ad55; border: 1px solid rgba(237,137,54,.3); }
     .src-Nikkei  { background: rgba(214,158,46,.18); color: #ecc94b; border: 1px solid rgba(214,158,46,.3); }
     .src-Yahoo   { background: rgba(99,179,237,.18); color: #90cdf4; border: 1px solid rgba(99,179,237,.3); }
-    /* category */
-    .cat-経済   { background: rgba(72,187,120,.14); color: #68d391; border: 1px solid rgba(72,187,120,.25); }
+    .cat-経済   { background: rgba(72,187,120,.14);  color: #68d391; border: 1px solid rgba(72,187,120,.25); }
     .cat-テック { background: rgba(159,122,234,.14); color: #b794f4; border: 1px solid rgba(159,122,234,.25); }
-    .cat-政治   { background: rgba(66,153,225,.14); color: #63b3ed; border: 1px solid rgba(66,153,225,.25); }
-    .cat-国際   { background: rgba(237,137,54,.14); color: #f6ad55; border: 1px solid rgba(237,137,54,.25); }
+    .cat-政治   { background: rgba(66,153,225,.14);  color: #63b3ed; border: 1px solid rgba(66,153,225,.25); }
+    .cat-国際   { background: rgba(237,137,54,.14);  color: #f6ad55; border: 1px solid rgba(237,137,54,.25); }
     .cat-社会   { background: rgba(113,128,150,.14); color: #a0aec0; border: 1px solid rgba(113,128,150,.25); }
 
     /* importance */
-    .imp {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      flex-shrink: 0;
-    }
-    .imp-track {
-      width: 56px; height: 3px;
-      background: rgba(255,255,255,.08);
-      border-radius: 2px;
-      overflow: hidden;
-    }
+    .imp { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+    .imp-track { width: 56px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
     .imp-fill {
       height: 100%;
       border-radius: 2px;
@@ -330,55 +301,18 @@
       width: 0;
       transition: width 1.1s cubic-bezier(.22,1,.36,1);
     }
-    .imp-num {
-      font-size: .62rem;
-      color: var(--txt2);
-      font-weight: 600;
-      white-space: nowrap;
-    }
+    .imp-num { font-size: .62rem; color: var(--txt2); font-weight: 600; white-space: nowrap; }
 
-    /* title */
-    .card-title {
-      font-size: .98rem;
-      font-weight: 700;
-      line-height: 1.45;
-      color: var(--txt0);
-      margin-bottom: 12px;
-    }
+    .card-title { font-size: .98rem; font-weight: 700; line-height: 1.45; color: var(--txt0); margin-bottom: 12px; }
+    .ln { height: 1px; background: var(--border); margin: 10px 0 14px; }
+    .card-sum { font-size: .83rem; line-height: 1.7; color: var(--txt1); margin-bottom: 14px; flex: 1; }
 
-    /* divider line */
-    .ln {
-      height: 1px;
-      background: var(--border);
-      margin: 10px 0 14px;
-    }
-
-    /* summary */
-    .card-sum {
-      font-size: .83rem;
-      line-height: 1.7;
-      color: var(--txt1);
-      margin-bottom: 14px;
-      flex: 1;
-    }
-
-    /* key points */
     .kp { list-style: none; margin-bottom: 18px; }
     .kp li {
-      font-size: .76rem;
-      color: var(--txt1);
-      padding: 3px 0;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      line-height: 1.45;
+      font-size: .76rem; color: var(--txt1);
+      padding: 3px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45;
     }
-    .kp li::before {
-      content: "▸";
-      color: var(--indigo);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
+    .kp li::before { content: "▸"; color: var(--indigo); flex-shrink: 0; margin-top: 1px; }
 
     /* card footer */
     .card-foot {
@@ -389,32 +323,200 @@
       border-top: 1px solid var(--border);
       margin-top: auto;
     }
-    .card-time {
-      font-size: .7rem;
-      color: var(--txt2);
+    .card-time { font-size: .7rem; color: var(--txt2); display: flex; align-items: center; gap: 5px; }
+    .card-foot-actions { display: flex; align-items: center; gap: 14px; }
+    .card-link {
+      font-size: .73rem; color: var(--indigo); text-decoration: none;
+      display: flex; align-items: center; gap: 4px;
+      transition: color .2s, gap .2s;
+    }
+    .card-link:hover { color: var(--purple); gap: 6px; }
+    .deep-btn {
+      font-size: .73rem;
+      color: var(--purple);
+      background: none;
+      border: none;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+      font-family: inherit;
+      transition: color .2s, gap .2s;
+      padding: 0;
     }
-    .card-link {
-      font-size: .73rem;
+    .deep-btn:hover { color: #c084fc; gap: 6px; }
+
+    /* empty */
+    .empty { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--txt2); }
+    .empty h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--txt1); }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4,7,14,.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s ease, visibility .3s ease;
+    }
+    #modal-overlay.open { opacity: 1; visibility: visible; }
+
+    .modal {
+      background: linear-gradient(145deg, rgba(11,15,26,.97) 0%, rgba(14,20,34,.97) 100%);
+      border: 1px solid rgba(99,102,241,.22);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 740px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 36px 36px 28px;
+      position: relative;
+      box-shadow: 0 48px 120px rgba(0,0,0,.85), 0 0 80px rgba(99,102,241,.08);
+      transform: scale(.93) translateY(16px);
+      transition: transform .4s cubic-bezier(.22,1,.36,1);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99,102,241,.3) transparent;
+    }
+    #modal-overlay.open .modal { transform: scale(1) translateY(0); }
+    .modal::-webkit-scrollbar { width: 4px; }
+    .modal::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 2px; }
+
+    /* aurora inside modal */
+    .modal::before {
+      content: "";
+      position: absolute;
+      width: 300px; height: 120px;
+      top: -30px; right: -40px;
+      background: rgba(99,102,241,.12);
+      border-radius: 50%;
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px; right: 18px;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--txt1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      font-size: .9rem;
+      line-height: 1;
+    }
+    .modal-close:hover { border-color: rgba(99,102,241,.5); color: var(--txt0); background: rgba(99,102,241,.12); }
+
+    .modal-header { margin-bottom: 28px; padding-right: 44px; }
+    .modal-badges { display: flex; gap: 6px; margin-bottom: 14px; }
+    .modal-title { font-size: 1.18rem; font-weight: 700; line-height: 1.45; color: var(--txt0); }
+
+    .modal-ln {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(99,102,241,.2), var(--border), transparent);
+      margin: 24px 0;
+    }
+
+    .modal-section { margin-bottom: 6px; }
+    .modal-section-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--indigo);
+      margin-bottom: 14px;
+    }
+    .modal-section-head .icon-wrap {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: rgba(99,102,241,.12);
+      border: 1px solid rgba(99,102,241,.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .modal-section-body {
+      font-size: .88rem;
+      line-height: 1.8;
+      color: var(--txt1);
+    }
+
+    /* 用語カード */
+    .terms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+      gap: 12px;
+    }
+    .term-card {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.16);
+      border-radius: 14px;
+      padding: 16px 18px;
+      transition: border-color .2s, background .2s;
+    }
+    .term-card:hover { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.3); }
+    .term-word {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .term-word::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #a5b4fc; flex-shrink: 0; }
+    .term-exp { font-size: .78rem; color: var(--txt1); line-height: 1.6; }
+
+    /* 関連トピック */
+    .topic-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .topic-tag {
+      padding: 5px 16px;
+      border-radius: 100px;
+      font-size: .74rem;
+      font-weight: 600;
+      background: rgba(168,85,247,.1);
+      border: 1px solid rgba(168,85,247,.22);
+      color: #c084fc;
+      transition: all .2s;
+    }
+    .topic-tag:hover { background: rgba(168,85,247,.2); border-color: rgba(168,85,247,.4); }
+
+    /* modal footer */
+    .modal-foot {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+    }
+    .modal-read-link {
+      font-size: .82rem;
       color: var(--indigo);
       text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 4px;
-      transition: color .2s, gap .2s;
+      gap: 8px;
+      padding: 9px 22px;
+      border-radius: 100px;
+      border: 1px solid rgba(99,102,241,.3);
+      background: rgba(99,102,241,.08);
+      transition: all .25s;
+      font-weight: 600;
     }
-    .card-link:hover { color: var(--purple); gap: 6px; }
-
-    /* empty */
-    .empty {
-      grid-column: 1/-1;
-      text-align: center;
-      padding: 80px 20px;
-      color: var(--txt2);
-    }
-    .empty h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--txt1); }
+    .modal-read-link:hover { background: rgba(99,102,241,.2); border-color: rgba(99,102,241,.55); color: #fff; gap: 10px; }
 
     /* footer */
     .foot {
@@ -428,7 +530,6 @@
     }
     .foot a { color: var(--txt2); text-decoration: underline; text-underline-offset: 3px; }
 
-    /* scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 3px; }
@@ -436,19 +537,21 @@
 </head>
 <body>
 
-<!-- particle canvas -->
 <canvas id="particles"></canvas>
 
-<!-- loading -->
 <div id="loading">
   <div class="load-logo">MORNING BRIEF</div>
   <div class="load-bar"><div class="load-bar-fill"></div></div>
   <div class="load-sub">Loading today's intelligence...</div>
 </div>
 
+<!-- modal -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-box"></div>
+</div>
+
 <div class="wrap">
 
-  <!-- header -->
   <header class="hdr">
     <div class="hdr-eye">AI-Powered News Digest</div>
     <h1 class="hdr-title">Morning Brief</h1>
@@ -457,16 +560,14 @@
       <div class="hdr-meta-item">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <span id="hdr-date">—</span>
       </div>
       <div class="hdr-meta-item">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
         <span id="hdr-updated">—</span>
       </div>
@@ -482,7 +583,6 @@
 
   <div class="divider"></div>
 
-  <!-- filters -->
   <div class="filters" id="filters">
     <button class="f-btn on" data-f="all">すべて</button>
     <button class="f-btn" data-f="経済">経済</button>
@@ -492,12 +592,11 @@
     <button class="f-btn" data-f="社会">社会</button>
   </div>
 
-  <!-- grid -->
   <main id="grid" class="grid"></main>
 
   <footer class="foot">
     <p>Sources: NHK · Reuters Japan · 日本経済新聞</p>
-    <p>要約は <a href="https://anthropic.com" target="_blank">Claude AI (Anthropic)</a> により生成されています</p>
+    <p>要約・分析は <a href="https://anthropic.com" target="_blank">Claude AI (Anthropic)</a> により生成されています</p>
   </footer>
 
 </div>
@@ -507,34 +606,23 @@
 (function() {
   const c = document.getElementById('particles');
   const ctx = c.getContext('2d');
-  let W, H, pts = [];
+  let W, H;
+  const pts = [];
 
-  function resize() {
-    W = c.width  = window.innerWidth;
-    H = c.height = window.innerHeight;
-  }
+  function resize() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; }
   window.addEventListener('resize', resize);
   resize();
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
-
   for (let i = 0; i < 55; i++) {
-    pts.push({
-      x: rnd(0, W), y: rnd(0, H),
-      vx: rnd(-.18, .18), vy: rnd(-.22, .22),
-      r: rnd(1, 2.2),
-      a: rnd(.08, .30),
-    });
+    pts.push({ x: rnd(0,W), y: rnd(0,H), vx: rnd(-.18,.18), vy: rnd(-.22,.22), r: rnd(1,2.2), a: rnd(.08,.30) });
   }
-
   function draw() {
     ctx.clearRect(0, 0, W, H);
     pts.forEach(p => {
       p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W;
-      if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H;
-      if (p.y > H) p.y = 0;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(99,102,241,${p.a})`;
@@ -552,15 +640,14 @@ function fmtTime(iso) {
   const d = new Date(iso);
   return isNaN(d) ? '' : d.toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 }
-
-function srcClass(s)  { return 'src-'  + (s || 'NHK'); }
-function catClass(c)  {
-  const map = { '経済': 'cat-経済', 'テック': 'cat-テック', '政治': 'cat-政治', '国際': 'cat-国際', '社会': 'cat-社会' };
-  return map[c] || 'cat-社会';
+function srcClass(s) { return 'src-' + (s || 'NHK'); }
+function catClass(c) {
+  return { '経済':'cat-経済', 'テック':'cat-テック', '政治':'cat-政治', '国際':'cat-国際', '社会':'cat-社会' }[c] || 'cat-社会';
 }
 
+/* ── Card factory ── */
 function makeCard(a) {
-  const impW = Math.round((a.importance || 5) / 10 * 100) + '%';
+  const impW   = Math.round((a.importance || 5) / 10 * 100) + '%';
   const kpHTML = (a.key_points || []).map(p => `<li>${p}</li>`).join('');
   const linkHTML = a.url
     ? `<a href="${a.url}" target="_blank" rel="noopener" class="card-link">
@@ -596,10 +683,116 @@ function makeCard(a) {
         </svg>
         ${fmtTime(a.published)}
       </span>
-      ${linkHTML}
+      <div class="card-foot-actions">
+        <button class="deep-btn" data-id="${a.id}">
+          深掘り分析
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        ${linkHTML}
+      </div>
     </div>`;
   return div;
 }
+
+/* ── Modal ── */
+function openModal(article) {
+  const da = article.deep_analysis || {};
+
+  const termsHTML = (da.terms || []).map(t => `
+    <div class="term-card">
+      <div class="term-word">${t.word}</div>
+      <div class="term-exp">${t.explanation}</div>
+    </div>`).join('');
+
+  const topicsHTML = (da.related_topics || []).map(t =>
+    `<span class="topic-tag">${t}</span>`).join('');
+
+  const linkHTML = article.url
+    ? `<a href="${article.url}" target="_blank" rel="noopener" class="modal-read-link">
+         元記事を読む
+         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+           <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+           <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+         </svg>
+       </a>` : '';
+
+  // section icon SVGs
+  const iconContext  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>`;
+  const iconTerms    = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`;
+  const iconInsights = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+  const iconTopics   = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>`;
+
+  $('modal-box').innerHTML = `
+    <button class="modal-close" id="modal-close-btn">✕</button>
+
+    <div class="modal-header">
+      <div class="modal-badges">
+        <span class="badge ${srcClass(article.source)}">${article.source}</span>
+        <span class="badge ${catClass(article.category)}">${article.category || 'その他'}</span>
+      </div>
+      <h2 class="modal-title">${article.title}</h2>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-head">
+        <span class="icon-wrap">${iconContext}</span>
+        背景・文脈
+      </div>
+      <p class="modal-section-body">${da.context || '情報がありません'}</p>
+    </div>
+
+    <div class="modal-ln"></div>
+
+    <div class="modal-section">
+      <div class="modal-section-head">
+        <span class="icon-wrap">${iconTerms}</span>
+        専門用語解説
+      </div>
+      ${termsHTML
+        ? `<div class="terms-grid">${termsHTML}</div>`
+        : `<p class="modal-section-body" style="color:var(--txt2)">—</p>`}
+    </div>
+
+    <div class="modal-ln"></div>
+
+    <div class="modal-section">
+      <div class="modal-section-head">
+        <span class="icon-wrap">${iconInsights}</span>
+        この記事から得られる知見
+      </div>
+      <p class="modal-section-body">${da.insights || '情報がありません'}</p>
+    </div>
+
+    ${topicsHTML ? `
+    <div class="modal-ln"></div>
+    <div class="modal-section" style="margin-bottom:0">
+      <div class="modal-section-head">
+        <span class="icon-wrap">${iconTopics}</span>
+        関連トピック
+      </div>
+      <div class="topic-tags">${topicsHTML}</div>
+    </div>` : ''}
+
+    <div class="modal-foot">${linkHTML}</div>`;
+
+  $('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  $('modal-close-btn').addEventListener('click', closeModal);
+}
+
+function closeModal() {
+  $('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+$('modal-overlay').addEventListener('click', e => {
+  if (e.target === $('modal-overlay')) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 /* ── Render ── */
 let all = [], curFilter = 'all';
@@ -607,12 +800,10 @@ let all = [], curFilter = 'all';
 function render(articles) {
   const grid = $('grid');
   grid.innerHTML = '';
-
   if (!articles.length) {
     grid.innerHTML = `<div class="empty"><h3>該当する記事がありません</h3><p>別のカテゴリを選択してください</p></div>`;
     return;
   }
-
   articles.forEach((a, i) => {
     const card = makeCard(a);
     grid.appendChild(card);
@@ -626,13 +817,21 @@ function render(articles) {
   });
 }
 
+/* deep-btn click delegation */
+$('grid').addEventListener('click', e => {
+  const btn = e.target.closest('.deep-btn');
+  if (!btn) return;
+  const id = parseInt(btn.dataset.id);
+  const article = all.find(a => a.id === id);
+  if (article) openModal(article);
+});
+
 function applyFilter(f) {
   curFilter = f;
   document.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('on', b.dataset.f === f));
   render(f === 'all' ? all : all.filter(a => a.category === f));
 }
 
-/* ── Filter listeners ── */
 $('filters').addEventListener('click', e => {
   const btn = e.target.closest('.f-btn');
   if (btn) applyFilter(btn.dataset.f);

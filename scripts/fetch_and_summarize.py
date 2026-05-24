@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 毎朝ニュースダイジェスト生成スクリプト
-RSS取得 → Claude APIでフィルタリング・要約 → news.json 生成
+RSS取得 → Claude APIでフィルタリング・要約・深掘り分析 → news.json 生成
 """
 
 import feedparser
@@ -142,6 +142,52 @@ JSONのみを返してください。"""
         return []
 
 
+def deep_analyze(client, articles):
+    """選定された記事の深掘り分析を生成"""
+    items = []
+    for i, a in enumerate(articles):
+        items.append(
+            f"[{i}] ソース:{a['source']}\nタイトル:{a['title']}\n"
+            f"内容:{a['description'][:500]}"
+        )
+    prompt = (
+        "以下のニュース記事それぞれについて、日本語で詳細な深掘り分析を生成してください。\n\n"
+        + "\n\n".join(items)
+        + """
+
+各記事について次のJSONを返してください（配列）:
+{
+  "articles": [
+    {
+      "index": 0,
+      "context": "この出来事の背景・歴史的文脈。なぜこれが起きたか、どのような経緯があるか、関係する国・組織・人物の役割を具体的に説明する。300〜400字。",
+      "terms": [
+        { "word": "用語名", "explanation": "一般読者向けの分かりやすい解説。専門知識がなくても理解できるように。60〜100字。" }
+      ],
+      "insights": "この記事を通じて得られる知見・示唆。業界・社会への影響、今後起こりうることの展望、読者が持つべき視点を含む。300〜400字。",
+      "related_topics": ["関連トピック1", "関連トピック2", "関連トピック3"]
+    }
+  ]
+}
+
+termsは記事に登場する専門用語・重要な固有名詞・概念を2〜4個選んで解説してください。
+JSONのみを返してください。"""
+    )
+    resp = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=8192,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = resp.content[0].text.strip()
+    if "```" in text:
+        text = text.split("```")[1].lstrip("json").strip()
+    try:
+        return json.loads(text)["articles"]
+    except Exception as ex:
+        print(f"  深掘り分析パースエラー: {ex}")
+        return []
+
+
 def parse_date(s):
     if not s:
         return datetime.now(JST).isoformat()
@@ -164,7 +210,7 @@ def main():
     print("=== Morning Brief 生成開始 ===")
     print(f"日時: {now.strftime('%Y-%m-%d %H:%M JST')}\n")
 
-    print("[1/3] RSSフィード取得中...")
+    print("[1/4] RSSフィード取得中...")
     all_articles = []
     for feed in RSS_FEEDS:
         all_articles.extend(fetch_rss(feed))
@@ -175,16 +221,20 @@ def main():
         print("ERROR: 記事を取得できませんでした")
         sys.exit(1)
 
-    print("[2/3] Claude API でスコアリング中...")
+    print("[2/4] Claude API でスコアリング中...")
     selected = score_and_select(client, all_articles)
     print(f"  選定: {len(selected)} 件\n")
 
-    print("[3/3] Claude API で要約生成中...")
+    print("[3/4] Claude API で要約生成中...")
     summaries = summarize(client, selected)
+
+    print("[4/4] Claude API で深掘り分析生成中...")
+    deep_analyses = deep_analyze(client, selected)
 
     output_articles = []
     for i, article in enumerate(selected):
-        meta = next((s for s in summaries if s.get("index") == i), {})
+        meta  = next((s for s in summaries      if s.get("index") == i), {})
+        deep  = next((d for d in deep_analyses  if d.get("index") == i), {})
         output_articles.append({
             "id":          i + 1,
             "title":       article["title"],
@@ -195,6 +245,12 @@ def main():
             "summary":     meta.get("summary", ""),
             "key_points":  meta.get("key_points", []),
             "importance":  meta.get("importance", 5),
+            "deep_analysis": {
+                "context":        deep.get("context", ""),
+                "terms":          deep.get("terms", []),
+                "insights":       deep.get("insights", ""),
+                "related_topics": deep.get("related_topics", []),
+            },
         })
 
     output = {
