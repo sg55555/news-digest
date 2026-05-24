@@ -1,6 +1,5 @@
 {
   "outputDirectory": "public",
-  "buildCommand": "node scripts/inject-env.js",
-  "installCommand": "",
+  "buildCommand": "npm run build",
   "framework": null
 }
