@@ -11,6 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Morning Brief" />
+  <!-- Supabase JS SDK (クロスデバイス同期 / SUPABASE_URL が未設定でもローカル動作) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     :root {
       --bg0: #070c16;
@@ -276,8 +278,9 @@
       from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .card.read { opacity: .42; }
-    .card.read:hover { opacity: 1; }
+    /* opacity は cardIn アニメーション(forwards)に上書きされるため filter を使用 */
+    .card.read { filter: brightness(.45) saturate(.65); transition: filter .4s ease; }
+    .card.read:hover { filter: brightness(1) saturate(1); }
 
     /* card top row */
     .card-top {
@@ -537,6 +540,88 @@
     }
     .modal-read-link:hover { background: rgba(99,102,241,.2); border-color: rgba(99,102,241,.55); color: #fff; gap: 10px; }
 
+    /* ── Sync indicator ── */
+    .sync-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      background: var(--txt2); transition: background .4s;
+    }
+    .sync-dot.on  { background: #34d399; box-shadow: 0 0 6px rgba(52,211,153,.5); }
+    .sync-dot.err { background: #f87171; }
+    #sync-label { cursor: pointer; transition: color .2s; }
+    #sync-label:hover { color: var(--txt0); }
+
+    /* ── Sync modal ── */
+    #sync-overlay {
+      position: fixed; inset: 0;
+      background: rgba(4,7,14,.75);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      z-index: 3000;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      opacity: 0; visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+    }
+    #sync-overlay.open { opacity: 1; visibility: visible; }
+    .sync-modal {
+      background: linear-gradient(145deg, rgba(11,15,26,.97), rgba(14,20,34,.97));
+      border: 1px solid rgba(99,102,241,.22);
+      border-radius: 20px;
+      width: 100%; max-width: 460px;
+      padding: 30px 30px 24px;
+      position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,.8), 0 0 60px rgba(99,102,241,.07);
+      transform: scale(.93) translateY(12px);
+      transition: transform .35s cubic-bezier(.22,1,.36,1);
+    }
+    #sync-overlay.open .sync-modal { transform: scale(1) translateY(0); }
+    .sync-modal h3 {
+      font-size: 1rem; font-weight: 700; color: var(--txt0);
+      margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+    }
+    .sync-field {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .sync-field label {
+      display: block; font-size: .68rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--indigo); margin-bottom: 8px;
+    }
+    .sync-id-row { display: flex; gap: 8px; align-items: center; }
+    .sync-id-row code {
+      flex: 1; font-size: .78rem; color: var(--txt0);
+      background: rgba(255,255,255,.06); border-radius: 8px;
+      padding: 6px 10px; word-break: break-all; line-height: 1.5;
+    }
+    .copy-btn {
+      padding: 6px 12px; border-radius: 8px;
+      border: 1px solid rgba(99,102,241,.3);
+      background: rgba(99,102,241,.1); color: var(--indigo);
+      font-size: .72rem; font-family: inherit; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(99,102,241,.22); color: #fff; }
+    .sync-desc { font-size: .78rem; color: var(--txt2); line-height: 1.6; margin-top: 6px; }
+    .sync-input-row { display: flex; gap: 8px; margin-top: 8px; }
+    .sync-input {
+      flex: 1; background: rgba(255,255,255,.05);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 7px 12px; color: var(--txt0); font-family: inherit; font-size: .78rem;
+      outline: none; transition: border-color .2s;
+    }
+    .sync-input:focus { border-color: rgba(99,102,241,.5); }
+    .sync-apply-btn {
+      padding: 7px 16px; border-radius: 8px;
+      border: 1px solid rgba(99,102,241,.3);
+      background: rgba(99,102,241,.12); color: var(--indigo);
+      font-size: .78rem; font-family: inherit; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }
+    .sync-apply-btn:hover { background: rgba(99,102,241,.25); color: #fff; }
+    .sync-status-msg { font-size: .75rem; margin-top: 8px; min-height: 18px; }
+
     /* footer */
     .foot {
       text-align: center;
@@ -564,7 +649,38 @@
   <div class="load-sub">Loading today's intelligence...</div>
 </div>
 
-<!-- modal -->
+<!-- sync settings modal -->
+<div id="sync-overlay">
+  <div class="sync-modal">
+    <button class="modal-close" onclick="closeSyncModal()" style="top:14px;right:14px;">✕</button>
+    <h3>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--indigo)">
+        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      同期設定
+    </h3>
+    <div class="sync-field">
+      <label>同期キー（このデバイス）</label>
+      <div class="sync-id-row">
+        <code id="sync-id-display">—</code>
+        <button class="copy-btn" onclick="copySyncId()">コピー</button>
+      </div>
+      <p class="sync-desc">このキーを他のデバイスで入力すると既読状態が同期されます。</p>
+    </div>
+    <div class="sync-field">
+      <label>別デバイスのキーを入力して同期</label>
+      <div class="sync-input-row">
+        <input class="sync-input" id="sync-import-input" type="text" placeholder="他デバイスの同期キーを貼り付け" />
+        <button class="sync-apply-btn" onclick="applySyncId()">適用</button>
+      </div>
+      <p class="sync-status-msg" id="sync-status-msg"></p>
+    </div>
+    <p class="sync-desc" id="sync-cloud-note" style="padding:0 2px;margin-top:4px"></p>
+  </div>
+</div>
+
+<!-- article modal -->
 <div id="modal-overlay">
   <div class="modal" id="modal-box"></div>
 </div>
@@ -596,6 +712,10 @@
           <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
         </svg>
         <span>NHK &middot; 東洋経済 &middot; BBC &middot; Google News 他</span>
+      </div>
+      <div class="hdr-meta-item" style="cursor:pointer" onclick="openSyncModal()">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-label" title="同期設定を開く">—</span>
       </div>
     </div>
   </header>
@@ -679,6 +799,116 @@ function markRead(id) {
   const s = getReadSet(); s.add(id);
   localStorage.setItem(READ_KEY, JSON.stringify([...s]));
   document.querySelectorAll(`[data-aid="${id}"]`).forEach(c => c.classList.add('read'));
+  pushRead(s);
+}
+
+/* ── Supabase クロスデバイス同期 ── */
+// Vercel ビルド時に scripts/inject-env.js が __SUPABASE_URL__ を置換する
+// 未設定の場合は localStorage のみで動作（機能制限なし）
+const _SB_URL = '__SUPABASE_URL__';
+const _SB_KEY = '__SUPABASE_ANON_KEY__';
+const SYNC_ID_KEY = 'mb_sync_id';
+
+const sb = (_SB_URL && !_SB_URL.startsWith('__'))
+  ? window.supabase.createClient(_SB_URL, _SB_KEY)
+  : null;
+
+function getSyncId() {
+  let id = localStorage.getItem(SYNC_ID_KEY);
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(SYNC_ID_KEY, id); }
+  return id;
+}
+
+async function fetchRemoteRead() {
+  if (!sb) return new Set();
+  try {
+    const { data } = await sb.from('read_states')
+      .select('article_ids')
+      .eq('sync_id', getSyncId())
+      .eq('article_date', new Date().toISOString().slice(0, 10))
+      .maybeSingle();
+    return new Set(data?.article_ids || []);
+  } catch { return new Set(); }
+}
+
+async function pushRead(ids) {
+  if (!sb) return;
+  try {
+    await sb.from('read_states').upsert({
+      sync_id: getSyncId(),
+      article_date: new Date().toISOString().slice(0, 10),
+      article_ids: [...ids],
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'sync_id,article_date' });
+  } catch {}
+}
+
+/* 同期キーを変更して既読状態をリモートとマージ */
+async function applySyncKey(newId) {
+  if (!newId || newId === getSyncId()) return null;
+  localStorage.setItem(SYNC_ID_KEY, newId);
+  const remote = await fetchRemoteRead();
+  const local = getReadSet();
+  const merged = new Set([...local, ...remote]);
+  localStorage.setItem(READ_KEY, JSON.stringify([...merged]));
+  await pushRead(merged);
+  return merged;
+}
+
+/* ── 同期設定モーダル ── */
+function openSyncModal() {
+  $('sync-id-display').textContent = getSyncId();
+  $('sync-import-input').value = '';
+  $('sync-status-msg').textContent = '';
+  $('sync-cloud-note').textContent = sb
+    ? '☁️ Supabase 同期が有効です。複数デバイスで同じキーを使うことで既読状態が同期されます。'
+    : '💾 現在はローカル保存のみです。Supabase を設定すると自動同期が有効になります。';
+  $('sync-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSyncModal() {
+  $('sync-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+$('sync-overlay').addEventListener('click', e => {
+  if (e.target === $('sync-overlay')) closeSyncModal();
+});
+
+function copySyncId() {
+  navigator.clipboard.writeText(getSyncId()).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'コピー完了!';
+    setTimeout(() => btn.textContent = 'コピー', 1800);
+  });
+}
+
+async function applySyncId() {
+  const newId = $('sync-import-input').value.trim();
+  const msg = $('sync-status-msg');
+  if (!newId) { msg.style.color = '#f87171'; msg.textContent = 'キーを入力してください'; return; }
+  msg.style.color = 'var(--txt2)'; msg.textContent = '同期中...';
+  const merged = await applySyncKey(newId);
+  if (merged === null) {
+    msg.style.color = 'var(--txt2)'; msg.textContent = '既に同じキーです。';
+  } else {
+    msg.style.color = '#34d399';
+    msg.textContent = `同期完了！既読 ${merged.size} 件をマージしました。`;
+    $('sync-id-display').textContent = getSyncId();
+    updateSyncIndicator();
+    applyRender();
+  }
+}
+
+function updateSyncIndicator() {
+  const dot = $('sync-dot');
+  const lbl = $('sync-label');
+  if (sb) {
+    dot.classList.add('on'); dot.classList.remove('err');
+    lbl.textContent = '同期有効';
+  } else {
+    dot.classList.remove('on', 'err');
+    lbl.textContent = 'ローカル保存';
+  }
 }
 
 /* ── Card factory ── */
@@ -903,15 +1133,28 @@ $('filters').addEventListener('click', e => {
 /* ── Load data ── */
 async function load() {
   try {
-    const r = await fetch('news.json?t=' + Date.now());
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
+    const [newsRes, remoteRead] = await Promise.all([
+      fetch('news.json?t=' + Date.now()),
+      fetchRemoteRead(),
+    ]);
+    if (!newsRes.ok) throw new Error('HTTP ' + newsRes.status);
+    const data = await newsRes.json();
     all = data.articles || [];
 
     $('hdr-date').textContent = data.date_label || '';
     const up = new Date(data.generated_at);
     $('hdr-updated').textContent = '最終更新 ' + (isNaN(up) ? '—' : up.toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' }));
 
+    // リモートとローカルの既読をマージ
+    if (remoteRead.size > 0) {
+      const local = getReadSet();
+      const merged = new Set([...local, ...remoteRead]);
+      if (merged.size > local.size) {
+        localStorage.setItem(READ_KEY, JSON.stringify([...merged]));
+      }
+    }
+
+    updateSyncIndicator();
     render(all);
   } catch (e) {
     $('grid').innerHTML = `<div class="empty"><h3>データ読み込みエラー</h3><p>${e.message}</p></div>`;
