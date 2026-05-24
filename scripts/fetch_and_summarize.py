@@ -81,23 +81,26 @@ def score_and_select(client, articles):
         "高スコア（7〜10）、芸能・スポーツ・地方軽微ニュースを低スコア（0〜3）として\n"
         f"スコアリングし、上位{TARGET}件のインデックスをスコア降順で返してください。\n\n"
         + "\n".join(lines)
-        + f"\n\n以下のJSONのみを返してください:\n{{\"selected\": [インデックスのリスト（上位{TARGET}件）]}}"
+        + f"\n\n必ず次のJSON形式のみを返してください（他のテキスト不要）:\n"
+        f'{{\"selected\": [インデックスのリスト（上位{TARGET}件、例: [3,7,1,...]）]}}'
     )
-    resp = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=400,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = resp.content[0].text.strip()
-    if "```" in text:
-        text = text.split("```")[1].lstrip("json").strip()
-    try:
-        result = json.loads(text)
-        indices = result["selected"][:TARGET]
-        return [articles[i] for i in indices if i < len(articles)]
-    except Exception as ex:
-        print(f"  スコアリングパースエラー: {ex}")
-        return articles[:TARGET]
+    for attempt in range(3):
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=400,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = resp.content[0].text.strip()
+        if "```" in text:
+            text = text.split("```")[1].lstrip("json").strip()
+        try:
+            result = json.loads(text)
+            indices = result["selected"][:TARGET]
+            return [articles[i] for i in indices if i < len(articles)]
+        except Exception as ex:
+            print(f"  スコアリングパースエラー (試行{attempt+1}): {ex} / レスポンス: {text[:100]!r}")
+    print("  スコアリング失敗、先頭10件を使用")
+    return articles[:TARGET]
 
 
 def summarize(client, articles):
