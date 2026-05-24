@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Morning Brief | 毎朝ニュースダイジェスト</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Morning Brief" />
   <style>
     :root {
       --bg0: #070c16;
@@ -214,6 +220,14 @@
       font-weight: 700;
       box-shadow: 0 0 18px rgba(99,102,241,.18);
     }
+    .filter-sep { width: 1px; height: 18px; background: var(--border); align-self: center; flex-shrink: 0; }
+    .f-btn.read-toggle { color: var(--purple); border-color: rgba(168,85,247,.22); }
+    .f-btn.read-toggle.on {
+      background: linear-gradient(135deg, rgba(168,85,247,.25), rgba(99,102,241,.15));
+      border-color: rgba(168,85,247,.5);
+      color: #c084fc;
+      font-weight: 700;
+    }
 
     /* ── Grid ── */
     .grid {
@@ -262,6 +276,8 @@
       from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    .card.read { opacity: .42; }
+    .card.read:hover { opacity: 1; }
 
     /* card top row */
     .card-top {
@@ -281,10 +297,13 @@
       letter-spacing: .06em;
       text-transform: uppercase;
     }
-    .src-NHK     { background: rgba(229,62,62,.18);  color: #fc8181; border: 1px solid rgba(229,62,62,.3); }
-    .src-Reuters { background: rgba(237,137,54,.18); color: #f6ad55; border: 1px solid rgba(237,137,54,.3); }
-    .src-Nikkei  { background: rgba(214,158,46,.18); color: #ecc94b; border: 1px solid rgba(214,158,46,.3); }
-    .src-Yahoo   { background: rgba(99,179,237,.18); color: #90cdf4; border: 1px solid rgba(99,179,237,.3); }
+    .src-nhk     { background: rgba(229,62,62,.18);  color: #fc8181; border: 1px solid rgba(229,62,62,.3); }
+    .src-yahoo   { background: rgba(99,179,237,.18); color: #90cdf4; border: 1px solid rgba(99,179,237,.3); }
+    .src-toyo    { background: rgba(214,158,46,.18); color: #ecc94b; border: 1px solid rgba(214,158,46,.3); }
+    .src-itmedia { background: rgba(56,189,248,.18); color: #7dd3fc; border: 1px solid rgba(56,189,248,.3); }
+    .src-bbc     { background: rgba(239,68,68,.18);  color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+    .src-hn      { background: rgba(251,146,60,.18); color: #fed7aa; border: 1px solid rgba(251,146,60,.3); }
+    .src-google  { background: rgba(52,211,153,.18); color: #6ee7b7; border: 1px solid rgba(52,211,153,.3); }
     .cat-経済   { background: rgba(72,187,120,.14);  color: #68d391; border: 1px solid rgba(72,187,120,.25); }
     .cat-テック { background: rgba(159,122,234,.14); color: #b794f4; border: 1px solid rgba(159,122,234,.25); }
     .cat-政治   { background: rgba(66,153,225,.14);  color: #63b3ed; border: 1px solid rgba(66,153,225,.25); }
@@ -576,7 +595,7 @@
           <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
           <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
         </svg>
-        <span>NHK &middot; Reuters &middot; 日経</span>
+        <span>NHK &middot; 東洋経済 &middot; BBC &middot; Google News 他</span>
       </div>
     </div>
   </header>
@@ -590,12 +609,14 @@
     <button class="f-btn" data-f="政治">政治</button>
     <button class="f-btn" data-f="国際">国際</button>
     <button class="f-btn" data-f="社会">社会</button>
+    <span class="filter-sep"></span>
+    <button class="f-btn read-toggle" id="unread-toggle">未読のみ</button>
   </div>
 
   <main id="grid" class="grid"></main>
 
   <footer class="foot">
-    <p>Sources: NHK · Reuters Japan · 日本経済新聞</p>
+    <p>Sources: NHK · 東洋経済 · ITmedia · BBC · Hacker News · Google News</p>
     <p>要約・分析は <a href="https://anthropic.com" target="_blank">Claude AI (Anthropic)</a> により生成されています</p>
   </footer>
 
@@ -640,9 +661,24 @@ function fmtTime(iso) {
   const d = new Date(iso);
   return isNaN(d) ? '' : d.toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 }
-function srcClass(s) { return 'src-' + (s || 'NHK'); }
+function srcClass(s) {
+  const m = { 'NHK':'nhk','Yahoo':'yahoo','東洋経済':'toyo','ITmedia':'itmedia','BBC':'bbc','HackerNews':'hn','Google':'google' };
+  return 'src-' + (m[s] || 'nhk');
+}
 function catClass(c) {
   return { '経済':'cat-経済', 'テック':'cat-テック', '政治':'cat-政治', '国際':'cat-国際', '社会':'cat-社会' }[c] || 'cat-社会';
+}
+
+/* ── 既読管理（日付単位でリセット） ── */
+const READ_KEY = 'mb_read_' + new Date().toISOString().slice(0, 10);
+function getReadSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function markRead(id) {
+  const s = getReadSet(); s.add(id);
+  localStorage.setItem(READ_KEY, JSON.stringify([...s]));
+  document.querySelectorAll(`[data-aid="${id}"]`).forEach(c => c.classList.add('read'));
 }
 
 /* ── Card factory ── */
@@ -658,9 +694,11 @@ function makeCard(a) {
          </svg>
        </a>` : '';
 
+  const isRead = getReadSet().has(a.id);
   const div = document.createElement('div');
-  div.className = 'card';
+  div.className = 'card' + (isRead ? ' read' : '');
   div.dataset.cat = a.category || '';
+  div.dataset.aid = a.id;
   div.innerHTML = `
     <div class="card-top">
       <div class="badges">
@@ -817,24 +855,49 @@ function render(articles) {
   });
 }
 
-/* deep-btn click delegation */
+/* ── クリック委譲（深掘り・既読） ── */
 $('grid').addEventListener('click', e => {
-  const btn = e.target.closest('.deep-btn');
-  if (!btn) return;
-  const id = parseInt(btn.dataset.id);
-  const article = all.find(a => a.id === id);
-  if (article) openModal(article);
+  const deepBtn = e.target.closest('.deep-btn');
+  if (deepBtn) {
+    const id = parseInt(deepBtn.dataset.id);
+    markRead(id);
+    const article = all.find(a => a.id === id);
+    if (article) openModal(article);
+    return;
+  }
+  const link = e.target.closest('.card-link');
+  if (link) {
+    const card = link.closest('[data-aid]');
+    if (card) markRead(parseInt(card.dataset.aid));
+  }
 });
+
+/* ── フィルター ── */
+let showUnreadOnly = false;
+
+function applyRender() {
+  const readSet = getReadSet();
+  let list = curFilter === 'all' ? all : all.filter(a => a.category === curFilter);
+  if (showUnreadOnly) list = list.filter(a => !readSet.has(a.id));
+  render(list);
+}
 
 function applyFilter(f) {
   curFilter = f;
-  document.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('on', b.dataset.f === f));
-  render(f === 'all' ? all : all.filter(a => a.category === f));
+  document.querySelectorAll('.f-btn[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  applyRender();
 }
 
 $('filters').addEventListener('click', e => {
   const btn = e.target.closest('.f-btn');
-  if (btn) applyFilter(btn.dataset.f);
+  if (!btn) return;
+  if (btn.id === 'unread-toggle') {
+    showUnreadOnly = !showUnreadOnly;
+    btn.classList.toggle('on', showUnreadOnly);
+    applyRender();
+  } else if (btn.dataset.f) {
+    applyFilter(btn.dataset.f);
+  }
 });
 
 /* ── Load data ── */
@@ -858,6 +921,13 @@ async function load() {
 }
 
 load();
+
+/* ── Service Worker 登録（PWA） ── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

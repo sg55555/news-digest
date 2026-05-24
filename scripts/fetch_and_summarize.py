@@ -17,21 +17,33 @@ JST = pytz.timezone("Asia/Tokyo")
 
 RSS_FEEDS = [
     # NHK
-    {"url": "https://www3.nhk.or.jp/rss/news/cat0.xml",  "source": "NHK",     "label": "NHK主要"},
-    {"url": "https://www3.nhk.or.jp/rss/news/cat4.xml",  "source": "NHK",     "label": "NHK経済"},
-    {"url": "https://www3.nhk.or.jp/rss/news/cat3.xml",  "source": "NHK",     "label": "NHK政治"},
-    {"url": "https://www3.nhk.or.jp/rss/news/cat5.xml",  "source": "NHK",     "label": "NHK国際"},
-    # Reuters Japan
-    {"url": "https://feeds.reuters.com/reuters/JPTopNews",      "source": "Reuters", "label": "Reuters Top"},
-    {"url": "https://feeds.reuters.com/reuters/JPBusinessNews", "source": "Reuters", "label": "Reuters Business"},
-    {"url": "https://feeds.reuters.com/reuters/JPTechNews",     "source": "Reuters", "label": "Reuters Tech"},
-    # 日経（見出し + リードのみ）
-    {"url": "https://www.nikkei.com/rss/",                "source": "Nikkei",  "label": "日経"},
-    {"url": "https://www.nikkei.com/news/rss/",           "source": "Nikkei",  "label": "日経2"},
-    # Yahoo! Japan ニュース (フォールバック)
-    {"url": "https://news.yahoo.co.jp/rss/categories/top-picks.xml",  "source": "Yahoo", "label": "Yahoo Top"},
-    {"url": "https://news.yahoo.co.jp/rss/categories/business.xml",   "source": "Yahoo", "label": "Yahoo Business"},
-    {"url": "https://news.yahoo.co.jp/rss/categories/it.xml",         "source": "Yahoo", "label": "Yahoo IT"},
+    {"url": "https://www3.nhk.or.jp/rss/news/cat0.xml",  "source": "NHK", "label": "NHK主要"},
+    {"url": "https://www3.nhk.or.jp/rss/news/cat4.xml",  "source": "NHK", "label": "NHK経済"},
+    {"url": "https://www3.nhk.or.jp/rss/news/cat3.xml",  "source": "NHK", "label": "NHK政治"},
+    {"url": "https://www3.nhk.or.jp/rss/news/cat5.xml",  "source": "NHK", "label": "NHK国際"},
+    # 東洋経済オンライン（日経代替の経済・ビジネス）
+    {"url": "https://toyokeizai.net/list/feed/rss",
+     "source": "東洋経済", "label": "東洋経済"},
+    # ITmedia（テック速報）
+    {"url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml",
+     "source": "ITmedia", "label": "ITmedia"},
+    # BBC Business（英語・国際経済）
+    {"url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+     "source": "BBC", "label": "BBC Business"},
+    # Hacker News（英語・テックコミュニティ注目トピック）
+    {"url": "https://hnrss.org/frontpage",
+     "source": "HackerNews", "label": "HackerNews"},
+    # Google News — 経済・金融キーワード
+    {"url": "https://news.google.com/rss/search?q=%E6%97%A5%E9%8A%80+OR+%E5%88%A9%E4%B8%8A%E3%81%92+OR+%E7%82%BA%E6%9B%BF+OR+%E6%A0%AA%E4%BE%A1+OR+%E9%87%91%E8%9E%8D%E6%94%BF%E7%AD%96+OR+%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AC&hl=ja&gl=JP&ceid=JP%3Aja",
+     "source": "Google", "label": "GNews経済"},
+    # Google News — テック・AIキーワード
+    {"url": "https://news.google.com/rss/search?q=AI+OR+ChatGPT+OR+%E5%8D%8A%E5%B0%8E%E4%BD%93+OR+OpenAI+OR+%E7%94%9F%E6%88%90AI+OR+%E3%82%B9%E3%82%BF%E3%83%BC%E3%83%88%E3%82%A2%E3%83%83%E3%83%97&hl=ja&gl=JP&ceid=JP%3Aja",
+     "source": "Google", "label": "GNews技術"},
+    # Yahoo! Japan ニュース（フォールバック）
+    {"url": "https://news.yahoo.co.jp/rss/categories/business.xml",
+     "source": "Yahoo", "label": "Yahoo Business"},
+    {"url": "https://news.yahoo.co.jp/rss/categories/it.xml",
+     "source": "Yahoo", "label": "Yahoo IT"},
 ]
 
 MAX_PER_FEED = 12
@@ -77,9 +89,11 @@ def score_and_select(client, articles):
         if a["description"]:
             lines.append(f"    {a['description'][:200]}")
     prompt = (
-        "以下のニュース記事一覧を読み、テクノロジー・政治・経済・国際ニュースを\n"
-        "高スコア（7〜10）、芸能・スポーツ・地方軽微ニュースを低スコア（0〜3）として\n"
-        f"スコアリングし、上位{TARGET}件のインデックスをスコア降順で返してください。\n\n"
+        "以下のニュース記事一覧を読み、プロ投資家・ビジネスパーソンが毎朝確認すべき重要度でスコアリングしてください。\n\n"
+        "高スコア（7〜10）: マクロ経済・金融政策・中央銀行・企業業績・M&A・テクノロジー・AI・半導体・地政学・外交・国際政治・貿易・政策立案\n"
+        "中スコア（4〜6）: 社会問題・広く影響する国内ニュース\n"
+        "低スコア（0〜3）: 芸能・スポーツ・地方の軽微な事件・ゲーム・日常生活・バラエティ\n"
+        "英語記事も含まれますが同様にスコアリングしてください。\n\n"
         + "\n".join(lines)
         + f"\n\n必ず次のJSON形式のみを返してください（他のテキスト不要）:\n"
         f'{{\"selected\": [インデックスのリスト（上位{TARGET}件、例: [3,7,1,...]）]}}'
@@ -111,7 +125,8 @@ def summarize(client, articles):
             f"内容:{a['description'][:500]}"
         )
     prompt = (
-        "以下のニュース記事それぞれについて、日本語で要約と解説を生成してください。\n\n"
+        "以下のニュース記事それぞれについて、日本語で要約と解説を生成してください。"
+        "記事が英語の場合も、要約・解説はすべて日本語で生成してください。\n\n"
         + "\n\n".join(items)
         + """
 
@@ -154,7 +169,8 @@ def deep_analyze(client, articles):
             f"内容:{a['description'][:500]}"
         )
     prompt = (
-        "以下のニュース記事それぞれについて、日本語で詳細な深掘り分析を生成してください。\n\n"
+        "以下のニュース記事それぞれについて、日本語で詳細な深掘り分析を生成してください。"
+        "記事が英語の場合も、分析はすべて日本語で生成してください。\n\n"
         + "\n\n".join(items)
         + """
 
@@ -188,7 +204,6 @@ JSONのみを返してください。"""
         return json.loads(text)["articles"]
     except Exception as ex:
         print(f"  深掘り分析パースエラー: {ex}")
-        # 出力の末尾が切れている場合の応急処置
         try:
             trimmed = text[:text.rfind('}', 0, text.rfind('}'))+1]
             trimmed = trimmed[:trimmed.rfind(']')+1] + '\n}'
