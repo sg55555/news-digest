@@ -5,3 +5,6 @@ __pycache__/
 .vercel
 venv/
 .venv/
+
+# Claude Code ローカル設定（パス・DB IDなど非公開情報を含む）
+.claude/
