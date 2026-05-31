@@ -347,7 +347,7 @@ def send_push_notifications(count: int, date_label: str) -> None:
                     "url":   "https://news-digest-tan.vercel.app",
                 }),
                 vapid_private_key=v_priv,
-                vapid_claims={"sub": "mailto:sgograb1411@gmail.com"},
+                vapid_claims={"sub": os.environ.get("VAPID_SUBJECT", "mailto:admin@example.com")},
                 content_encoding="aes128gcm",
             )
             ok += 1
