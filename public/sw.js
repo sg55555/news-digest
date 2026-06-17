@@ -1,5 +1,5 @@
-const CACHE = 'morning-brief-v2';
-const PRE_CACHE = ['/index.html', '/favicon.svg', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'morning-brief-v3';
+const PRE_CACHE = ['/index.html', '/favicon.svg', '/manifest.json', '/icon-192.png', '/icon-512.png', '/icon-180.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
